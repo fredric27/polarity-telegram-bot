@@ -1,11 +1,14 @@
 {
   "name": "telegram-bot-starter",
   "scripts": {
-    "start": "node index.js"
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
+    "i": "^0.3.7",
+    "nodemon": "^3.1.11",
+    "npm": "^11.8.0",
     "telegraf": "^4.16.3"
   }
 }
