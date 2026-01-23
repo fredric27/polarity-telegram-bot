@@ -82,6 +82,12 @@ async function startSearching(ctx, message) {
         departureTimestamp
     );
 
+    if (solutions === -1) {
+      console.log("Stazione non trovata");
+      return ctx.reply("Non ho trovato una delle stazioni. Puoi ripetere meglio?");
+    }
+
+
     console.log("Solutions trovate:", solutions);
 
     const slimSolutions = solutions.map(s => ({
