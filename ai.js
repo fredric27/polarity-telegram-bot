@@ -11,11 +11,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-async function answer(userMessage) {
+async function answerNotClear(userMessage) {
     try {
         const response = await openai.responses.create({
-            model: 'gpt-5-nano',
-            instructions: 'You\'re a travel assistant, useful to find the best solutions for train travels in Italy. Always answer in Italian. Tell the user that you\'re searching for the best solutions being calm and telling him he just need to wait.',
+            model: 'gpt-4.1-nano',
+            instructions: 'Sei un bot che da partenza e destinazione trova il miglior treno.Sei stronzo come la merda insulti tutti quelli che ti insultano. Tu sei l\'addetto alle richieste non chiare. L\'input è il messaggio dell\'utente. Se ti accorgi che l\'utente ti sta prendendo per il culo, sii sarcastico e prendilo per il culo anche tu, puoi anche essere cattivo. Se invece ti rendi conto che l\'utente ha fatto una richiesta non chiara a te, chiedigli cortesemente di ripetere la sua richiesta.',
             input: userMessage
         });
 
@@ -35,21 +35,30 @@ async function structuredAnswer(userMessage) {
     });
 
     const completion = await openai.chat.completions.parse({
-        model: "gpt-5-nano",
+        model: "gpt-4.1-nano",
         messages: [
     {
-        role: "system",
-        content: `
-            Rispondi SOLO con JSON valido.
-            Estrai esclusivamente:
-            - departureStation
-            - destinationStation
+  role: "system",
+  content: `
+    Rispondi SOLO con JSON valido.
+    NON aggiungere testo prima o dopo.
+    NON spiegare.
+    NON commentare.
+    NON aggiungere note.
+    NON aggiungere campi extra.
+    La data odierna è ${new Date().toISOString()}, usa questa informazione.
 
-            Usa esattamente i nomi delle città italiane così come compaiono nel messaggio.
-            Non aggiungere timestamp, non aggiungere altri campi.
-            Non aggiungere testo fuori dal JSON.
-        `
-    },
+    Il JSON DEVE essere strutturato esattamente così:
+
+    {
+      "departureStation": "...",
+      "destinationStation": "...",
+      "departureTimestamp": "..."
+    }
+    la data deve essere in formato iso8601 es: "2026-01-23T15:33:00+01:00"
+    Se non trovi una stazione, metti stringa vuota.
+  `
+},
     { role: "user", content: userMessage }
 ],
 
@@ -66,15 +75,68 @@ async function voiceTranscription(filePath) {
           model: "gpt-4o-transcribe",
         });
 
+        console.log(transcription.text)
+
         return transcription.text;
 }
+
+const SolutionSchema = z.object({
+  departureTime: z.string(),
+  arrivalTime: z.string(),
+  duration: z.string(),
+  name: z.string(),
+  acronym: z.string(),
+  price: z.number()
+});
+
+
+
+
+async function getSolutionByAi(userMessage, allSolutions) {
+  try {
+    const completion = await openai.chat.completions.parse({
+      model: "gpt-4.1-nano",
+      messages: [
+        {
+          role: "system",
+          content: `
+            Sei un assistente che sceglie UNA SOLA soluzione ferroviaria.
+            Devi analizzare il messaggio dell'utente e scegliere la soluzione migliore.
+            Se l'utente chiede un prezzo basso, scegli il prezzo più basso.
+            Se chiede il piu veloce, scegli quello che arriva prima.
+            Se chiede "diretto", scegli quella senza cambi.
+            Rispondi inoltrando solo i dati importanti sulla soluzione
+            Se una soluzione non e possibile (diretto non disponibile) comunicaglielo e fornisci il migliore per velocita
+          `
+        },
+        {
+          role: "user",
+          content: `
+            Messaggio utente: ${userMessage}
+            Solutions disponibili: ${JSON.stringify(allSolutions)}
+          `
+        }
+      ],
+      response_format: zodResponseFormat(SolutionSchema, "best_solution")
+    });
+
+    return completion.choices[0].message.parsed;
+
+  } catch (error) {
+    console.error("getSolutionByAi error:", error);
+    return null;
+  }
+}
+
+
 
 
 // Esporta le funzioni
 module.exports = {
-    answer,
+    answerNotClear,
     structuredAnswer,
     voiceTranscription,
+    getSolutionByAi,
     openai
 };
 

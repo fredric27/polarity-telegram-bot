@@ -32,10 +32,10 @@ bot.on("voice", async (ctx) => {
   const voice = ctx.message.voice;
   const fileId = voice.file_id;
 
-  // ottieni link Telegram
+
     const url = (await ctx.telegram.getFileLink(fileId)).href;
 
-  // percorso temporaneo
+
   const tmpPath = path.join(
     "/tmp",
     `voice_${voice.file_unique_id}.ogg`
@@ -43,7 +43,7 @@ bot.on("voice", async (ctx) => {
 
 
   try {
-    // scarica il vocale
+
     const res = await axios.get(url, { responseType: "stream" });
     await new Promise((resolve, reject) => {
       const w = fs.createWriteStream(tmpPath);
@@ -52,29 +52,64 @@ bot.on("voice", async (ctx) => {
       w.on("error", reject);
 
     });
-    // trascrivi
+
     const transcription = await ai.voiceTranscription(tmpPath);
 
 
-    // risposta
+
     startSearching(ctx, transcription);
 
   } catch (err) {
     console.error(err);
     await ctx.reply("Errore nella trascrizione.");
   } finally {
-    // 6) cleanup
+
     fs.existsSync(tmpPath) && fs.unlinkSync(tmpPath);
   }
 });
 
-async function startSearching(ctx, message){
-    console.log("start searching")
+async function startSearching(ctx, message) {
+    console.log("start searching");
+
+
     const json = await ai.structuredAnswer(message);
-    const { departureStation, destinationStation, departureTimeStamp } = json
-    console.log(departureStation, destinationStation, departureTimeStamp)
-    console.log(await getSolutionsByJSON(departureStation, destinationStation, departureTimeStamp))
+    console.log("json estratto", json);
+    const { departureStation, destinationStation, departureTimestamp } = json;
+
+    console.log(departureStation, destinationStation, departureTimestamp);
+
+    console.log('timestamp: ', departureTimestamp)
+    const solutions = await getSolutionsByJSON(
+        departureStation,
+        destinationStation,
+        departureTimestamp
+    );
+    if(solutions == -1){
+      console.log('notclear')
+      await ctx.reply(await ai.answerNotClear(message));
+      return;
+    }
+
+    console.log("Solutions trovate:", solutions);
+
+    const slimSolutions = solutions.map(s => ({
+        origin: s.origin,
+        destination: s.destination,
+        departureTime: s.departureTime,
+        arrivalTime: s.arrivalTime,
+        duration: s.duration,
+        price: s.price,
+        name: s.name,
+        acronym: s.acronym
+    }));
+
+    const best = await ai.getSolutionByAi(message, slimSolutions);
+
+    console.log("Best solution:", best);
+
+    await ctx.reply(`🚆 Miglior soluzione trovata:\n${JSON.stringify(best, null, 2)}`);
 }
+
 
 
 bot.launch()

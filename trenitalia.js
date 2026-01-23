@@ -43,12 +43,12 @@ function checkMultiStation(obj) {
 
   if (!departureStation || departureStation.length === 0) {
     console.log("Stazione di partenza non trovata");
-    return;
+    return -1;
   }
 
   if (!destinationStation || destinationStation.length === 0) {
     console.log("Stazione di destinazione non trovata");
-    return;
+    return -1;
   }
 
   const Solutions = await getAllSolutions(
@@ -119,4 +119,3 @@ module.exports = {getSolutionsByJSON}
 
 
 
-// nel caso di input arrivo delta treni prima o dopo
