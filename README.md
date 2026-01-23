@@ -1,65 +1,102 @@
-# Telegram Bot Starter
+<h1>Polarity Telegram Bot — Trenitalia Travel Finder</h1>
 
-Documentazione:
+Bot Telegram scritto in Node.js che interpreta messaggi testuali/voce, individua la miglior soluzione di viaggio tramite le API pubbliche di Trenitalia (lefrecce.it) e restituisce l’opzione più adatta in base alla richiesta dell’utente.
 
-- [0 - Installazione](./docs/0_installazione.md)
-- [1 - Terminale](./docs/1_terminale.md)
-- [2 - Moduli NPM](./docs/2_modulo_npm.md)
-- [3 - Oggetti in JS](./docs/3_oggetti.md)
-- [4 - HTTP](./docs/4_http.md)
-- [5 - Axios](./docs/5_axios.md)
-- [6 - env](./docs/6_env.md)
+<h2>✅ Funzionalità principali</h2>
 
-Esempi:
+*   Parsing intelligente del messaggio con OpenAI per estrarre:
 
-- [1 - hello world](./examples/1_hello_world.js)
-- [2 - Chiamata in GET con axios](./examples/2_axios_get.js)
-- [3 - Chiamata in POST con axios](./examples/3_axios_post.js)
-- [4 - Chiamata con Axios, callback vs async/await](./examples/4_axios_callback_async_await.js)
+    *   stazione di partenza
 
-## Bot telegram
+    *   stazione di arrivo
 
-### Creazione del bot e token
+    *   data/ora di partenza
 
-Per creare un bot su Telegram, è necessario contattare il bot `@BotFather` e seguire le istruzioni.
+*   Ricerca soluzioni Trenitalia via API pubbliche
 
-Una volta creato il bot, `@BotFather` fornirà un token che dovrà essere utilizzato per interagire con il bot.
+*   Selezione della soluzione migliore con LLM (prezzo/rapidità/diretta)
 
-Crea il file `.env` e inserisci il token del bot
+*   Supporto messaggi vocali (trascrizione)
 
-```env
-TELEGRAM_BOT_TOKEN=<token>
-```
+*   Link calendario per aggiungere il viaggio a Google Calendar
 
-### Installazione delle dependencies
 
-Apri un terminale nella cartella del progetto e lancia il comando
+<h2>🧩 Architettura (file principali)</h2>
 
-```bash
+*   index.js: entry point del bot Telegram (Telegraf)
+
+*   ai.js: logica OpenAI (parsing, best-solution, trascrizione)
+
+*   trenitalia.js: chiamate HTTP alle API di Trenitalia
+
+*   package.json: dipendenze e script
+
+
+<h2>🔐 Variabili d’ambiente richieste</h2>
+
+Crea un file .env nella root del progetto:
+
+TELEGRAM\_BOT\_TOKEN=...
+
+OPENAI\_API\_KEY=...
+
+<h2>🚀 Avvio del bot</h2>
+
 npm install
-```
 
-### Avvio del bot
-
-Per avviare il bot, lancia il comando
-
-```bash
 node index.js
-```
 
-## API Pubbliche
+In alternativa: npm run dev (usa nodemon).
 
-- [rapidapi](https://rapidapi.com/collection/list-of-free-apis): richiede registrazione, ma fornisce snippet di codice NodeJS con Axios
-- [jsonplaceholder](https://jsonplaceholder.typicode.com/)
-- [public-apis github reposirot](https://github.com/public-apis/public-apis)
-- [Dog API](https://dog.ceo/dog-api/)
-- [publicapis.dev](https://publicapis.dev/)
-- [HTTP Dog](https://http.dog/)
-- [HTTP Cat](https://http.cat/)
+<h2>🧠 Come funziona (flow)</h2>
 
-## Note
+1.  L’utente invia testo o voce al bot.
 
-- Il bot deve essere avviato per poter ricevere e rispondere ai messaggi
-- Il bot non può essere avviato su più dispositivi contemporaneamente a meno che non vengano utilizzati token diversi
-- Una volta effettuate delle modifiche sul codice, il bot dovrà essere riavviato per poterle applicare. Quindi è necessario interrompere il processo e riavviarlo
-- Esempio di implementazione di un bot telegram è disponibile nel file `index.js`
+2.  Il messaggio viene trasformato in JSON tramite OpenAI:
+
+    *   departureStation
+
+    *   destinationStation
+
+    *   departureTimestamp
+
+3.  Il bot interroga Trenitalia con trenitalia.js.
+
+4.  Le soluzioni vengono filtrate e passate a OpenAI per scegliere la migliore.
+
+5.  Il bot risponde con:
+
+    *   dettagli del viaggio
+
+    *   pulsante “Aggiungi al calendario”
+
+
+<h2>🔊 Input supportati</h2>
+
+*   Testo naturale (es. “Da Milano a Roma domani mattina”)
+
+*   Messaggi vocali (trascritti via OpenAI)
+
+
+<h2>📅 Calendario</h2>
+
+Alla fine della risposta, il bot genera un link Google Calendar con:
+
+*   origine/destinazione
+
+*   orari
+
+*   nome treno
+
+
+<h2>📦 Dipendenze principali</h2>
+
+*   telegraf
+
+*   axios
+
+*   openai
+
+*   zod
+
+*   dotenv
