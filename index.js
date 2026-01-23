@@ -6,7 +6,8 @@ require("dotenv").config()
 
 
 const { Telegraf } = require("telegraf")
-const { message } = require("telegraf/filters")
+const { message } = require("telegraf/filters");
+const { start } = require("repl");
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
     console.error("Please provide a valid Telegram Bot Token.")
@@ -23,8 +24,7 @@ bot.start(async (ctx) => {
 
 bot.on(message("text"), async (ctx) => {
     const message = ctx.message.text
-    await ctx.reply(await ai.answer(message))
-    await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
+    startSearching(ctx, message);
 })
 
 bot.on("voice", async (ctx) => {
@@ -56,7 +56,7 @@ bot.on("voice", async (ctx) => {
 
 
     // risposta
-    await ctx.reply(transcription);
+    startSearching(ctx, transcription);
 
   } catch (err) {
     console.error(err);
@@ -66,6 +66,10 @@ bot.on("voice", async (ctx) => {
     fs.existsSync(tmpPath) && fs.unlinkSync(tmpPath);
   }
 });
+
+async function startSearching(ctx, message){
+    await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
+}
 
 
 bot.launch()
