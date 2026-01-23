@@ -1,4 +1,7 @@
+const path = require("path");
+const axios = require("axios");
 const ai = require("./ai")
+const fs = require("fs");
 require("dotenv").config()
 
 
@@ -23,6 +26,47 @@ bot.on(message("text"), async (ctx) => {
     await ctx.reply(await ai.answer(message))
     await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
 })
+
+bot.on("voice", async (ctx) => {
+  const voice = ctx.message.voice;
+  const fileId = voice.file_id;
+
+  // ottieni link Telegram
+    const url = (await ctx.telegram.getFileLink(fileId)).href;
+
+  // percorso temporaneo
+  const tmpPath = path.join(
+    "/tmp",
+    `voice_${voice.file_unique_id}.ogg`
+  );
+
+
+  try {
+    // scarica il vocale
+    const res = await axios.get(url, { responseType: "stream" });
+    await new Promise((resolve, reject) => {
+      const w = fs.createWriteStream(tmpPath);
+      res.data.pipe(w);
+      w.on("finish", resolve);
+      w.on("error", reject);
+
+    });
+    // trascrivi
+    const transcription = await ai.voiceTranscription(tmpPath);
+
+
+    // risposta
+    await ctx.reply(transcription);
+
+  } catch (err) {
+    console.error(err);
+    await ctx.reply("Errore nella trascrizione.");
+  } finally {
+    // 6) cleanup
+    fs.existsSync(tmpPath) && fs.unlinkSync(tmpPath);
+  }
+});
+
 
 bot.launch()
 
