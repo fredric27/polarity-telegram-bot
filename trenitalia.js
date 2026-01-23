@@ -67,7 +67,7 @@ function checkMultiStation(obj) {
 
 async function getAllSolutions(idDeparture, idDestination, orario = null){
   if(orario == null){
-    orario = new Date();
+    orario = new Date().toISOString();
   }
 
   const response = await axios.post("https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions",

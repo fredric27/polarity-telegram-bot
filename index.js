@@ -6,7 +6,7 @@ const { getSolutionsByJSON } = require('./trenitalia.js')
 require("dotenv").config()
 
 
-const { Telegraf } = require("telegraf")
+const { Telegraf, Markup } = require("telegraf")
 const { message } = require("telegraf/filters");
 const { start } = require("repl");
 
@@ -20,7 +20,7 @@ console.log("Token caricato:", process.env.TELEGRAM_BOT_TOKEN)
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
 
 bot.start(async (ctx) => {
-    await ctx.reply("Ciao")
+    await ctx.reply("Chiedi pure a me per ottenere le tratte di trenitalia")
 })
 
 bot.on(message("text"), async (ctx) => {
@@ -73,7 +73,14 @@ async function startSearching(ctx, message) {
 
 
     const json = await ai.structuredAnswer(message);
-    console.log("json estratto", json);
+
+    if (!json || !json.departureStation || !json.destinationStation)
+      {
+              console.log('notclear')
+      await ctx.reply(await ai.answerNotClear(message));
+      return;
+      }
+
     const { departureStation, destinationStation, departureTimestamp } = json;
 
     console.log(departureStation, destinationStation, departureTimestamp);
@@ -84,11 +91,6 @@ async function startSearching(ctx, message) {
         destinationStation,
         departureTimestamp
     );
-    if(solutions == -1){
-      console.log('notclear')
-      await ctx.reply(await ai.answerNotClear(message));
-      return;
-    }
 
     console.log("Solutions trovate:", solutions);
 
@@ -102,7 +104,6 @@ async function startSearching(ctx, message) {
         name: s.name,
         acronym: s.acronym
     }));
-    console.log(JSON.stringify(slimSolutions, null, 2) + " porcodio");
 
     const best = await ai.getSolutionByAi(message, slimSolutions);
     if(!best){
@@ -111,8 +112,49 @@ async function startSearching(ctx, message) {
 
     console.log(best)
     await ctx.reply(ai.formatSolution(best));
+    sendCalendarFile(ctx, best);
+
 }
 
+
+
+function sendCalendarFile(ctx, solution) {
+  const title = `VIAGGIO: ${solution.origin} → ${solution.destination} | ${solution.name}`;
+  const details = `Partenza: ${solution.departureTime}\nArrivo: ${solution.arrivalTime}`;
+  const location = solution.origin;
+
+  const dates = `${isoToICS(solution.departureTime)}/${isoToICS(solution.arrivalTime)}`;
+
+  const url =
+    'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    `&text=${encodeURIComponent(title)}` +
+    `&details=${encodeURIComponent(details)}` +
+    `&location=${encodeURIComponent(location)}` +
+    `&dates=${dates}`;
+
+  return ctx.reply(
+    '↓',
+    Markup.inlineKeyboard([
+      Markup.button.url('📅 Aggiungi al calendario', url)
+    ])
+  );
+}
+
+
+function isoToICS(isoString) {
+  const date = new Date(isoString); // JS interpreta automaticamente il fuso
+
+  const pad = (n) => n.toString().padStart(2, "0");
+
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1); // mesi 0-11
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+
+  return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+}
 
 
 bot.launch()
