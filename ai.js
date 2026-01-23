@@ -2,6 +2,7 @@
 const OpenAI = require('openai');
 const { zodResponseFormat } = require("openai/helpers/zod");
 const { z } = require("zod");
+const fs = require("fs");
 require('dotenv').config();
 
 // Inizializza il client OpenAI con la tua API key
@@ -47,10 +48,21 @@ async function structuredAnswer(userMessage) {
 }
 
 
+async function voiceTranscription(filePath) {
+        const transcription = await openai.audio.transcriptions.create({
+          file: fs.createReadStream(filePath),
+          model: "gpt-4o-transcribe",
+        });
+
+        return transcription.text;
+}
+
+
 // Esporta le funzioni
 module.exports = {
     answer,
     structuredAnswer,
+    voiceTranscription,
     openai
 };
 
