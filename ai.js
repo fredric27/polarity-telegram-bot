@@ -5,7 +5,7 @@ const { z } = require("zod");
 const fs = require("fs");
 require('dotenv').config();
 
-const treni = require('./trenitalia.js')
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY

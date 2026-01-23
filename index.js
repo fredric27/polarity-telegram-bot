@@ -2,6 +2,7 @@ const path = require("path");
 const axios = require("axios");
 const ai = require("./ai")
 const fs = require("fs");
+const { getSolutionsByJSON } = require('./trenitalia.js')
 require("dotenv").config()
 
 
@@ -68,7 +69,11 @@ bot.on("voice", async (ctx) => {
 });
 
 async function startSearching(ctx, message){
-    await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
+    console.log("start searching")
+    const json = await ai.structuredAnswer(message);
+    const { departureStation, destinationStation, departureTimeStamp } = json
+    console.log(departureStation, destinationStation, departureTimeStamp)
+    console.log(await getSolutionsByJSON(departureStation, destinationStation, departureTimeStamp))
 }
 
 

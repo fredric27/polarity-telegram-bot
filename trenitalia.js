@@ -33,10 +33,9 @@ function checkMultiStation(obj) {
 }
 
 
-async function getSolutionsByJSON(departureName, destinationName, orario = null){
-  const jsonData = await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
-  console.log(jsonData)
-
+ async function getSolutionsByJSON(departureName, destinationName, orario = null){
+  console.log(departureName)
+  console.log("getsolution in ")
   const [departureStation, destinationStation] = await Promise.all([
     getAllStationsByName(departureName),
     getAllStationsByName(destinationName)
@@ -58,7 +57,7 @@ async function getSolutionsByJSON(departureName, destinationName, orario = null)
     orario
   );
 
-  console.log(Solutions);
+  return Solutions
 }
 
 
@@ -113,7 +112,7 @@ const solutions = array.map(item => {
 return solutions;
 }
 
-getSolutionsByJSON();
+module.exports = {getSolutionsByJSON}
 
 
 
