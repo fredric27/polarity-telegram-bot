@@ -8,19 +8,17 @@ require("dotenv").config()
 
 const { Telegraf, Markup } = require("telegraf")
 const { message } = require("telegraf/filters");
-const { start } = require("repl");
+
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
     console.error("Please provide a valid Telegram Bot Token.")
     process.exit(1)
 }
 
-console.log("Token caricato:", process.env.TELEGRAM_BOT_TOKEN)
-
+console.log("Token caricato:")
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
-
 bot.start(async (ctx) => {
-    await ctx.reply("Chiedi pure a me per ottenere le tratte di trenitalia")
+    await ctx.reply("Ciao! Sono qui per aiutarti a trovare il treno perfetto. Scrivimi da dove parti, dove vuoi andare e quando. Penso io a cercare tutte le opzioni Trenitalia più comode per te.")
 })
 
 bot.on(message("text"), async (ctx) => {
@@ -54,9 +52,6 @@ bot.on("voice", async (ctx) => {
     });
 
     const transcription = await ai.voiceTranscription(tmpPath);
-
-
-
     startSearching(ctx, transcription);
 
   } catch (err) {
@@ -70,22 +65,17 @@ bot.on("voice", async (ctx) => {
 
 async function startSearching(ctx, message) {
     console.log("start searching");
-
-
     const json = await ai.structuredAnswer(message);
 
     if (!json || !json.departureStation || !json.destinationStation)
       {
-              console.log('notclear')
-      await ctx.reply(await ai.answerNotClear(message));
-      return;
+          console.log('notclear')
+          await ctx.reply(await ai.answerNotClear(message));
+          return;
       }
 
     const { departureStation, destinationStation, departureTimestamp } = json;
 
-    console.log(departureStation, destinationStation, departureTimestamp);
-
-    console.log('timestamp: ', departureTimestamp)
     const solutions = await getSolutionsByJSON(
         departureStation,
         destinationStation,
@@ -142,12 +132,12 @@ function sendCalendarFile(ctx, solution) {
 
 
 function isoToICS(isoString) {
-  const date = new Date(isoString); // JS interpreta automaticamente il fuso
+  const date = new Date(isoString);
 
   const pad = (n) => n.toString().padStart(2, "0");
 
   const year = date.getFullYear();
-  const month = pad(date.getMonth() + 1); // mesi 0-11
+  const month = pad(date.getMonth() + 1);
   const day = pad(date.getDate());
   const hours = pad(date.getHours());
   const minutes = pad(date.getMinutes());
@@ -155,12 +145,7 @@ function isoToICS(isoString) {
 
   return `${year}${month}${day}T${hours}${minutes}${seconds}`;
 }
-
-
 bot.launch()
-
-
-
 /*     const sent = await ctx.reply('...');
 
     for await (const event of stream) {

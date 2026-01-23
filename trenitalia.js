@@ -1,9 +1,8 @@
-const ai = require("./ai")
 const axios = require('axios');
 
 async function getAllStationsByName(name) {
   try {
-    const response = await axios.get(
+      const response = await axios.get(
       `https://www.lefrecce.it/Channels.Website.BFF.WEB/website/locations/search?name=${encodeURIComponent(name)}`
     );
 
@@ -18,7 +17,6 @@ async function getAllStationsByName(name) {
     if (multi) {
       return multi;
     }
-
     return data[0];
 
   } catch (error) {
@@ -28,15 +26,10 @@ async function getAllStationsByName(name) {
 }
 
 
-function checkMultiStation(obj) {
-    return obj.multistation === true
-}
-
-
  async function getSolutionsByJSON(departureName, destinationName, orario = null){
-  console.log(departureName)
-  console.log("getsolution in ")
-  const [departureStation, destinationStation] = await Promise.all([
+    console.log(departureName)
+    console.log("getsolution in ")
+    const [departureStation, destinationStation] = await Promise.all([
     getAllStationsByName(departureName),
     getAllStationsByName(destinationName)
   ]);
@@ -71,27 +64,26 @@ async function getAllSolutions(idDeparture, idDestination, orario = null){
   }
 
   const response = await axios.post("https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions",
-    {
-	"departureLocationId": idDeparture,
-	"arrivalLocationId": idDestination,
-	"departureTime": orario,
-	"adults": 1,
-	"children": 0,
-	"criteria": {
-		"frecceOnly": false,
-		"regionalOnly": false,
-		"noChanges": false,
-		"order": "DEPARTURE_DATE",
-	        "limit": null,
-		"offset": 0
-	},
-	"advancedSearchRequest": {
-		"bestFare": false
-	}
+  {
+    "departureLocationId": idDeparture,
+    "arrivalLocationId": idDestination,
+    "departureTime": orario,
+    "adults": 1,
+    "children": 0,
+    "criteria": {
+      "frecceOnly": false,
+      "regionalOnly": false,
+      "noChanges": false,
+      "order": "DEPARTURE_DATE",
+            "limit": null,
+      "offset": 0
+    },
+    "advancedSearchRequest": {
+      "bestFare": false
+    }
 })
 
 let array = response.data.solutions;
-
 array = array.filter(item => item.solution.price !== null);
 
 const solutions = array.map(item => {

@@ -1,9 +1,11 @@
 require('dotenv').config();
+
+
 const OpenAI = require('openai');
 const { zodResponseFormat } = require("openai/helpers/zod");
 const { z } = require("zod");
 const fs = require("fs");
-require('dotenv').config();
+
 
 
 
@@ -18,9 +20,8 @@ async function answerNotClear(userMessage) {
             instructions: 'Sei un bot che da partenza e destinazione trova il miglior treno.Sei stronzo come la merda insulti tutti quelli che ti insultano. Tu sei l\'addetto alle richieste non chiare. L\'input è il messaggio dell\'utente. Se ti accorgi che l\'utente ti sta prendendo per il culo, sii sarcastico e prendilo per il culo anche tu, puoi anche essere cattivo. Se invece ti rendi conto che l\'utente ha fatto una richiesta non chiara a te, chiedigli sarcasticamente di ripetere la sua richiesta.',
             input: userMessage
         });
-
-
         return response.output_text;
+
     } catch (error) {
         console.error('Errore nella richiesta OpenAI:', error);
         throw error;
