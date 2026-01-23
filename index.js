@@ -24,17 +24,7 @@ bot.start(async (ctx) => {
 
 bot.on(message("text"), async (ctx) => {
     const message = ctx.message.text
-<<<<<<< HEAD
     startSearching(ctx, message);
-=======
-    //await ctx.reply(await ai.answer(message))
-    await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
-    
-
-
-
-
->>>>>>> 92d0de6 (Fixed issues)
 })
 
 bot.on("voice", async (ctx) => {

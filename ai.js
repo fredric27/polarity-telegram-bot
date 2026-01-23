@@ -2,11 +2,8 @@ require('dotenv').config();
 const OpenAI = require('openai');
 const { zodResponseFormat } = require("openai/helpers/zod");
 const { z } = require("zod");
-<<<<<<< HEAD
 const fs = require("fs");
 require('dotenv').config();
-=======
->>>>>>> 92d0de6 (Fixed issues)
 
 const treni = require('./trenitalia.js')
 
