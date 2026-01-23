@@ -1,4 +1,6 @@
+const ai = require("./ai")
 require("dotenv").config()
+
 
 const { Telegraf } = require("telegraf")
 const { message } = require("telegraf/filters")
@@ -18,7 +20,23 @@ bot.start(async (ctx) => {
 
 bot.on(message("text"), async (ctx) => {
     const message = ctx.message.text
-    await ctx.reply(`Cooosaaa: ${message}???`)
+    await ctx.reply(await ai.answer(message))
+    await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
 })
 
 bot.launch()
+
+
+
+/*     const sent = await ctx.reply('...');
+
+    for await (const event of stream) {
+        setTimeout(() => {
+        ctx.telegram.editMessageText(
+        ctx.chat.id,                    // chat_id
+        sent.message_id,                // message_id
+        undefined,                      // inline_message_id (non serve qui)
+        sent.content + event            // nuovo testo del messaggio
+        );
+    }, 100);
+    } */
