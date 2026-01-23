@@ -1,3 +1,4 @@
+const ai = require("./ai")
 const axios = require('axios');
 
 async function getAllStationsByName(name) {
@@ -8,15 +9,17 @@ async function getAllStationsByName(name) {
 
     const data = response.data;
 
-    if (data.length != null) {
-      return data
-    }
-    else{
-      return null
+    if (!data || data.length === 0) {
+      return null;
     }
 
+    const multi = data.find(station => station.multistation === true);
 
+    if (multi) {
+      return multi;
+    }
 
+    return data[0];
 
   } catch (error) {
     console.log("errore " + error);
@@ -24,20 +27,40 @@ async function getAllStationsByName(name) {
   }
 }
 
+
 function checkMultiStation(obj) {
     return obj.multistation === true
 }
 
 
-async function main(){
-  const id = await getAllStationsByName('sdfdsfdfs');
-  if(id === null){
-    //open ai clutcha
+async function getSolutionsByJSON(departureName, destinationName, orario = null){
+  const jsonData = await ctx.reply(JSON.stringify(await ai.structuredAnswer(message)))
+  console.log(jsonData)
+
+  const [departureStation, destinationStation] = await Promise.all([
+    getAllStationsByName(departureName),
+    getAllStationsByName(destinationName)
+  ]);
+
+  if (!departureStation || departureStation.length === 0) {
+    console.log("Stazione di partenza non trovata");
+    return;
   }
-  else{
-  console.log("ID trovato:", id);
+
+  if (!destinationStation || destinationStation.length === 0) {
+    console.log("Stazione di destinazione non trovata");
+    return;
   }
-};
+
+  const Solutions = await getAllSolutions(
+    departureStation.id,
+    destinationStation.id,
+    orario
+  );
+
+  console.log(Solutions);
+}
+
 
 
 
@@ -73,8 +96,9 @@ let array = response.data.solutions;
 array = array.filter(item => item.solution.price !== null);
 
 const solutions = array.map(item => {
-  console.log(item)
+
   return {
+    trains: item.solution.trains,
     origin: item.solution.origin,
     destination: item.solution.destination,
     departureTime: item.solution.departureTime,
@@ -86,12 +110,14 @@ const solutions = array.map(item => {
   }
 })
 
-console.log(solutions)
 return solutions;
-
 }
 
-console.log(getAllStationsByName('Milano Centrale'))
+getSolutionsByJSON();
+
+
+
+
 
 
 // nel caso di input arrivo delta treni prima o dopo

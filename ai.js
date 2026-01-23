@@ -1,16 +1,19 @@
-// Importa la libreria OpenAI
+require('dotenv').config();
 const OpenAI = require('openai');
 const { zodResponseFormat } = require("openai/helpers/zod");
 const { z } = require("zod");
+<<<<<<< HEAD
 const fs = require("fs");
 require('dotenv').config();
+=======
+>>>>>>> 92d0de6 (Fixed issues)
 
-// Inizializza il client OpenAI con la tua API key
+const treni = require('./trenitalia.js')
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Funzione per inviare una richiesta a ChatGPT
 async function answer(userMessage) {
     try {
         const response = await openai.responses.create({
@@ -28,7 +31,6 @@ async function answer(userMessage) {
 }
 
 async function structuredAnswer(userMessage) {
-    // Definisci lo schema Zod
     const MySchema = z.object({
         departureStation: z.string(),
         destinationStation: z.string(),
@@ -36,11 +38,24 @@ async function structuredAnswer(userMessage) {
     });
 
     const completion = await openai.chat.completions.parse({
-        model: "gpt-5-nano", // o versioni successive
+        model: "gpt-5-nano",
         messages: [
-            { role: "system", content: "Extract the required information and put it in the schema. Remember that these are italian words and city names. the departureTimestamp should be in ISO 8601 format. (date and time) example: 2026-01-22T16:58:00.000+01:00. Use the italian time zone" },
-            { role: "user", content: userMessage }
-        ],
+    {
+        role: "system",
+        content: `
+            Rispondi SOLO con JSON valido.
+            Estrai esclusivamente:
+            - departureStation
+            - destinationStation
+
+            Usa esattamente i nomi delle città italiane così come compaiono nel messaggio.
+            Non aggiungere timestamp, non aggiungere altri campi.
+            Non aggiungere testo fuori dal JSON.
+        `
+    },
+    { role: "user", content: userMessage }
+],
+
         response_format: zodResponseFormat(MySchema, "default_schema")
     });
 
