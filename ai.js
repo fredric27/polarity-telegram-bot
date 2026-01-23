@@ -81,6 +81,8 @@ async function voiceTranscription(filePath) {
 }
 
 const SolutionSchema = z.object({
+  origin: z.string(),
+  destination: z.string(),
   departureTime: z.string(),
   arrivalTime: z.string(),
   duration: z.string(),
@@ -107,7 +109,8 @@ async function getSolutionByAi(userMessage, allSolutions) {
             Se chiede "diretto", scegli quella senza cambi.
             Rispondi inoltrando solo i dati importanti sulla soluzione
             Se una soluzione non e possibile (diretto non disponibile) comunicaglielo e fornisci il migliore per velocita
-          `
+
+         `
         },
         {
           role: "user",
@@ -128,12 +131,31 @@ async function getSolutionByAi(userMessage, allSolutions) {
   }
 }
 
+function formatSolution(sol) {
+  console.log(sol)
+  return `
+🚆 Treno: ${sol.name}
+💰 Prezzo: €${sol.price}
+
+📍 Partenza: ${sol.origin}
+📍 Destinazione: ${sol.destination}
+
+🕗 Giorno: ${new Date(sol.departureTime).getDate()}/${new Date(sol.departureTime).getMonth()+1}/${new Date(sol.departureTime).getFullYear()}
+
+🕗 Orario Partenza: ${new Date(sol.departureTime).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+🕘 Orario Arrivo: ${new Date(sol.arrivalTime).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+⏱ Durata Viaggio: ${sol.duration}
+
+🚄 Buon viaggio!
+  `;
+}
 
 
 
 // Esporta le funzioni
 module.exports = {
     answerNotClear,
+    formatSolution,
     structuredAnswer,
     voiceTranscription,
     getSolutionByAi,

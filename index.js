@@ -102,12 +102,15 @@ async function startSearching(ctx, message) {
         name: s.name,
         acronym: s.acronym
     }));
+    console.log(JSON.stringify(slimSolutions, null, 2) + " porcodio");
 
     const best = await ai.getSolutionByAi(message, slimSolutions);
+    if(!best){
+      return ctx.reply("Non sono riuscito a trovare una soluzione.");
+    }
 
-    console.log("Best solution:", best);
-
-    await ctx.reply(`🚆 Miglior soluzione trovata:\n${JSON.stringify(best, null, 2)}`);
+    console.log(best)
+    await ctx.reply(ai.formatSolution(best));
 }
 
 
