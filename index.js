@@ -8,22 +8,23 @@ require("dotenv").config()
 
 const { Telegraf, Markup } = require("telegraf")
 const { message } = require("telegraf/filters");
+const { is } = require("zod/locales");
 
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
-    console.error("Please provide a valid Telegram Bot Token.")
-    process.exit(1)
+  console.error("Please provide a valid Telegram Bot Token.")
+  process.exit(1)
 }
 
 console.log("Token caricato:")
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
 bot.start(async (ctx) => {
-    await ctx.reply("Ciao! Sono qui per aiutarti a trovare il treno perfetto. Scrivimi da dove parti, dove vuoi andare e quando. Penso io a cercare tutte le opzioni Trenitalia più comode per te.")
+  await ctx.reply("Ciao! Sono qui per aiutarti a trovare il treno perfetto. Scrivimi da dove parti, dove vuoi andare e quando. Penso io a cercare tutte le opzioni Trenitalia più comode per te.")
 })
 
 bot.on(message("text"), async (ctx) => {
-    const message = ctx.message.text
-    startSearching(ctx, message);
+  const message = ctx.message.text
+  startSearching(ctx, message, false);
 })
 
 bot.on("voice", async (ctx) => {
@@ -31,7 +32,7 @@ bot.on("voice", async (ctx) => {
   const fileId = voice.file_id;
 
 
-    const url = (await ctx.telegram.getFileLink(fileId)).href;
+  const url = (await ctx.telegram.getFileLink(fileId)).href;
 
 
   const tmpPath = path.join(
@@ -52,7 +53,7 @@ bot.on("voice", async (ctx) => {
     });
 
     const transcription = await ai.voiceTranscription(tmpPath);
-    startSearching(ctx, transcription);
+    startSearching(ctx, transcription, true);
 
   } catch (err) {
     console.error(err);
@@ -63,52 +64,88 @@ bot.on("voice", async (ctx) => {
   }
 });
 
-async function startSearching(ctx, message) {
-    console.log("start searching");
-    const json = await ai.structuredAnswer(message);
+async function startSearching(ctx, message, isVoice) {
+  console.log("start searching");
+  const json = await ai.structuredAnswer(message);
 
-    if (!json || !json.departureStation || !json.destinationStation)
-      {
-          console.log('notclear')
-          await ctx.reply(await ai.answerNotClear(message));
-          return;
-      }
+  if (!json || !json.departureStation || !json.destinationStation) {
+    console.log('notclear')
+    const text = await ai.answerNotClear(message);
+    await ctx.reply(text);
 
-    const { departureStation, destinationStation, departureTimestamp } = json;
-
-    const solutions = await getSolutionsByJSON(
-        departureStation,
-        destinationStation,
-        departureTimestamp
-    );
-
-    if (solutions === -1) {
-      console.log("Stazione non trovata");
-      return ctx.reply("Non ho trovato una delle stazioni. Puoi ripetere meglio?");
+    if (isVoice) {
+      const audioPath = await ai.answerAudio2(text);
+      if (audioPath != null)
+        await ctx.replyWithVoice({ source: audioPath });
     }
 
+    return;
+  }
 
-    console.log("Solutions trovate:", solutions);
+  const { departureStation, destinationStation, departureTimestamp } = json;
 
-    const slimSolutions = solutions.map(s => ({
-        origin: s.origin,
-        destination: s.destination,
-        departureTime: s.departureTime,
-        arrivalTime: s.arrivalTime,
-        duration: s.duration,
-        price: s.price,
-        name: s.name,
-        acronym: s.acronym
-    }));
+  const solutions = await getSolutionsByJSON(
+    departureStation,
+    destinationStation,
+    departureTimestamp
+  );
 
-    const best = await ai.getSolutionByAi(message, slimSolutions);
-    if(!best){
-      return ctx.reply("Non sono riuscito a trovare una soluzione.");
+  if (solutions === -1) {
+    console.log("Stazione non trovata");
+
+    await ctx.reply("Non ho trovato una delle stazioni. Puoi ripetere meglio?");
+
+    if (isVoice) {
+      const audioPath = await ai.answerAudio2("Non ho trovato una delle stazioni. Puoi ripetere meglio?");
+      if (audioPath != null)
+        await ctx.replyWithVoice({ source: audioPath });
     }
 
-    console.log(best)
-    await ctx.reply(ai.formatSolution(best));
-    sendCalendarFile(ctx, best);
+    return;
+  }
+
+  const messageWait = await ctx.reply("Stiamo cercando il miglior treno per te......");
+
+
+  console.log("Solutions trovate:", solutions);
+
+  const slimSolutions = solutions.map(s => ({
+    origin: s.origin,
+    destination: s.destination,
+    departureTime: s.departureTime,
+    arrivalTime: s.arrivalTime,
+    duration: s.duration,
+    price: s.price,
+    name: s.name,
+    acronym: s.acronym
+  }));
+
+  const best = await ai.getSolutionByAi(message, slimSolutions);
+  if (!best) {
+    await ctx.deleteMessage(messageWait.message_id);
+    await ctx.reply("Non sono riuscito a trovare una soluzione.");
+
+    if (isVoice) {
+      const audioPath = await ai.answerAudio("Non sono riuscito a trovare una soluzione.");
+      if (audioPath != null)
+        await ctx.replyWithVoice({ source: audioPath });
+    }
+
+    return;
+  }
+
+  console.log(best)
+  await ctx.deleteMessage(messageWait.message_id);
+  await ctx.reply(ai.formatSolution(best));
+
+  if (isVoice) {
+    const audioPath = await ai.answerAudio(ai.formatSolution(best));
+    if (audioPath != null)
+      await ctx.replyWithVoice({ source: audioPath });
+
+  }
+
+  sendCalendarFile(ctx, best);
 
 }
 

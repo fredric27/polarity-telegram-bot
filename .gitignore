@@ -136,3 +136,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+#File audio for text to speech
+*.wav
+*.ogg
