@@ -90,7 +90,7 @@ async function startSearching(ctx, message, isVoice) {
     departureTimestamp
   );
 
-  if (solutions === -1) {
+  if (solutions == null) {
     console.log("Stazione non trovata");
 
     await ctx.reply("Non ho trovato una delle stazioni. Puoi ripetere meglio?");
@@ -136,7 +136,8 @@ async function startSearching(ctx, message, isVoice) {
 
   console.log(best)
   await ctx.deleteMessage(messageWait.message_id);
-  await ctx.reply(ai.formatSolution(best));
+  sendCalendarFile(ctx, best);
+
 
   if (isVoice) {
     const audioPath = await ai.answerAudio(ai.formatSolution(best));
@@ -145,7 +146,6 @@ async function startSearching(ctx, message, isVoice) {
 
   }
 
-  sendCalendarFile(ctx, best);
 
 }
 
@@ -166,7 +166,7 @@ function sendCalendarFile(ctx, solution) {
     `&dates=${dates}`;
 
   return ctx.reply(
-    '↓',
+    ai.formatSolution(solution),
     Markup.inlineKeyboard([
       Markup.button.url('📅 Aggiungi al calendario', url)
     ])
